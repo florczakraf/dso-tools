@@ -2,7 +2,6 @@ import io
 
 import pytest
 from dso_tools.dso import (
-    make_string_table,
     offset_to_string_index,
     string_index_to_offset,
     get_new_string_offset,
@@ -13,20 +12,21 @@ from dso_tools.dso import (
     offset_to_string,
     u32,
     eu32,
+    parse_string_table,
+    get_raw_string_table,
 )
 
 
-def test_make_string_table():
-    raw_strings = b"\x00second\x00third\x00"
-
-    result = make_string_table(raw_strings)
-
-    assert result == [b"", b"second", b"third", b""]
-    assert b"\x00".join(result) == raw_strings
+def test_get_raw_string_table():
+    assert get_raw_string_table([]) == b""
+    assert get_raw_string_table([b""]) == b""
+    assert get_raw_string_table([b"", b"second", b"third", b""]) == b"\x00second\x00third\x00"
 
 
 def test_encode_string_table():
-    assert encode_string_table([b"", b"second", b"third", b""]) == b"\x00second\x00third\x00"
+    assert encode_string_table([]) == b"\x00\x00\x00\x00"
+    assert encode_string_table([b""]) == b"\x00\x00\x00\x00"
+    assert encode_string_table([b"", b"second", b"third", b""]) == b"\x0e\x00\x00\x00\x00second\x00third\x00"
 
 
 def test_offset_to_string_index():
@@ -71,10 +71,11 @@ def test_bytes_to_int():
 
 
 def test_u32_from_stream():
-    stream = io.BytesIO(b"\x2a\x00\x00\x00\xff\xff\x00\x00")
+    stream = io.BytesIO(b"\x2a\x00\x00\x00\xff\xff\x00\x00\xab\xcd")
 
     assert u32(stream) == 42
     assert u32(stream) == 65535
+    assert stream.read() == b"\xab\xcd"
     with pytest.raises(ValueError):
         u32(stream)
 
@@ -121,3 +122,17 @@ def test_eu32():
 
     with pytest.raises(ValueError) as e:
         eu32(int(1e10))
+
+
+def test_parse_empty_string_table():
+    stream = io.BytesIO(b"\x00\x00\x00\x00\xab\xcd")
+
+    assert parse_string_table(stream) == [b""]
+    assert stream.read() == b"\xab\xcd"
+
+
+def test_parse_string_table():
+    stream = io.BytesIO(b"\x0e\x00\x00\x00\x00second\x00third\x00\xab\xcd")
+
+    assert parse_string_table(stream) == [b"", b"second", b"third", b""]
+    assert stream.read() == b"\xab\xcd"

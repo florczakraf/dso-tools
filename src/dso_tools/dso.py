@@ -16,8 +16,13 @@ def get_new_string_offset(offset, string_table, new_string_table):
     return new_offset
 
 
-def encode_string_table(string_table):
+def get_raw_string_table(string_table):
     return b"\x00".join(string_table)
+
+
+def encode_string_table(string_table):
+    raw_strings = get_raw_string_table(string_table)
+    return eu32(len(raw_strings)) + raw_strings
 
 
 def encode_code(code):
@@ -55,12 +60,8 @@ def string_index_to_offset(index, string_table):
     return len(b"\x00".join(string_table[: index + 1])) - len(string_table[index])
 
 
-def make_string_table(raw_strings):
-    return raw_strings.split(b"\x00")
-
-
 def offset_to_string_index(offset, string_table):
-    raw_strings = encode_string_table(string_table)
+    raw_strings = get_raw_string_table(string_table)
 
     if offset == len(raw_strings) - 1:
         return len(raw_strings.split(b"\x00")) - 1
@@ -82,7 +83,14 @@ def u32(four_bytes_or_stream):
 
 
 def offset_to_string(offset, string_table):
-    raw_string = encode_string_table(string_table)
+    raw_string = get_raw_string_table(string_table)
     end = raw_string.index(b"\00", offset)
 
     return raw_string[offset:end]
+
+
+def parse_string_table(stream):
+    strings_length = u32(stream)
+    string_table = stream.read(strings_length).split(b"\x00")
+
+    return string_table
