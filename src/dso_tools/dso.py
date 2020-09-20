@@ -2,6 +2,7 @@ import struct
 
 from dso_tools.opcodes import OPCODES
 
+SUPPORTED_DSO_VERSIONS = (43,)
 U32_BYTES = 4
 
 
@@ -87,6 +88,14 @@ def offset_to_string(offset, string_table):
     end = raw_string.index(b"\00", offset)
 
     return raw_string[offset:end]
+
+
+def parse_protocol_version(stream):
+    version = u32(stream)
+    if version not in SUPPORTED_DSO_VERSIONS:
+        raise ValueError(f"dso version {version} is not on supported list ({SUPPORTED_DSO_VERSIONS})")
+
+    return version
 
 
 def parse_string_table(stream):

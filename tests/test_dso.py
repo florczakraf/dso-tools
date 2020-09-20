@@ -12,6 +12,7 @@ from dso_tools.dso import (
     offset_to_string,
     u32,
     eu32,
+    parse_protocol_version,
     parse_string_table,
     get_raw_string_table,
 )
@@ -122,6 +123,18 @@ def test_eu32():
 
     with pytest.raises(ValueError) as e:
         eu32(int(1e10))
+
+
+def test_parse_protocol_version():
+    stream = io.BytesIO(b"\x2b\x00\x00\x00\xab\xcd")
+
+    assert parse_protocol_version(stream) == 43
+    assert stream.read() == b"\xab\xcd"
+
+    stream = io.BytesIO(b"\x2c\x00\x00\x00")
+
+    with pytest.raises(ValueError):
+        parse_protocol_version(stream)
 
 
 def test_parse_empty_string_table():
