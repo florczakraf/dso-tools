@@ -8,8 +8,7 @@ FLOAT_BYTES = 8
 
 
 def encode_string_references(string_references):
-    buffer = b""
-    buffer += eu32(len(string_references))
+    buffer = eu32(len(string_references))
     for offset, occurrences in string_references:
         buffer += eu32(offset)
         buffer += eu32(len(occurrences))

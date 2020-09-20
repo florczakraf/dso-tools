@@ -68,11 +68,11 @@ def test_bytes_to_int():
     assert bytes_to_int(b"\x09\x00\x00\x00") == 9
     assert bytes_to_int(b"\x01\x01\x00\x00") == 257
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="^provide one or four bytes$"):
         bytes_to_int(b"\x00\x00\x00\x00\x00")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="^provide one or four bytes$"):
         bytes_to_int(b"\x00\x00")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="^provide one or four bytes$"):
         bytes_to_int(b"")
 
 
@@ -82,7 +82,7 @@ def test_u32_from_stream():
     assert u32(stream) == 42
     assert u32(stream) == 65535
     assert stream.read() == b"\xab\xcd"
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="^provide four bytes$"):
         u32(stream)
 
 
@@ -90,9 +90,9 @@ def test_u32_from_bytes():
     assert u32(b"\x2a\x00\x00\x00") == 42
     assert u32(b"\x00\x01\x00\x00") == 256
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="provide four bytes"):
         u32(b"")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="provide four bytes"):
         u32(b"\x00")
 
 
