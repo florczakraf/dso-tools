@@ -15,6 +15,8 @@ from dso_tools.dso import (
     parse_protocol_version,
     parse_string_table,
     get_raw_string_table,
+    parse_float_table,
+    encode_float_table,
 )
 
 
@@ -149,3 +151,24 @@ def test_parse_string_table():
 
     assert parse_string_table(stream) == [b"", b"second", b"third", b""]
     assert stream.read() == b"\xab\xcd"
+
+
+def test_parse_empty_float_table():
+    stream = io.BytesIO(b"\x00\x00\x00\x00\xab\xcd")
+    assert parse_float_table(stream) == []
+    assert stream.read() == b"\xab\xcd"
+
+
+def test_parse_float_table():
+    stream = io.BytesIO(
+        b"\x02\x00\x00\x00" b"\x00\x00\x00\x00\x00\x00\xf8\x3f" b"\xcd\xcc\xcc\xcc\xcc\x0c\x45\x40" b"\xab\xcd"
+    )
+    assert parse_float_table(stream) == [1.5, 42.1]
+    assert stream.read() == b"\xab\xcd"
+
+
+def test_encode_float_table():
+    assert encode_float_table([]) == b"\x00\x00\x00\x00"
+    assert encode_float_table([1.5, 42.1]) == (
+        b"\x02\x00\x00\x00" b"\x00\x00\x00\x00\x00\x00\xf8\x3f" b"\xcd\xcc\xcc\xcc\xcc\x0c\x45\x40"
+    )

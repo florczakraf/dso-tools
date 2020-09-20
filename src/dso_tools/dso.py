@@ -4,6 +4,18 @@ from dso_tools.opcodes import OPCODES
 
 SUPPORTED_DSO_VERSIONS = (43,)
 U32_BYTES = 4
+FLOAT_BYTES = 8
+
+
+def parse_float_table(stream):
+    floats_count = u32(stream)
+    format_string = "<" + "d" * floats_count
+    return list(struct.unpack(format_string, stream.read(floats_count * FLOAT_BYTES)))
+
+
+def encode_float_table(float_table):
+    format_string = "<" + "d" * len(float_table)
+    return eu32(len(float_table)) + struct.pack(format_string, *float_table)
 
 
 def is_opcode(instruction):
