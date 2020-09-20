@@ -7,6 +7,32 @@ U32_BYTES = 4
 FLOAT_BYTES = 8
 
 
+def encode_string_references(string_references):
+    buffer = b""
+    buffer += eu32(len(string_references))
+    for offset, occurrences in string_references:
+        buffer += eu32(offset)
+        buffer += eu32(len(occurrences))
+        for occurrence in occurrences:
+            buffer += eu32(occurrence)
+
+    return buffer
+
+
+def parse_string_references(stream):
+    string_references_count = u32(stream)
+    string_references = []
+    for _ in range(string_references_count):
+        offset = u32(stream)
+        occurrences_count = u32(stream)
+        occurrences = []
+        for _ in range(occurrences_count):
+            occurrences.append(u32(stream))
+        string_references.append((offset, occurrences))
+
+    return string_references
+
+
 def parse_code(stream):
     instruction_count = u32(stream)
     line_break_pair_count = u32(stream)

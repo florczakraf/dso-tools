@@ -18,6 +18,8 @@ from dso_tools.dso import (
     parse_float_table,
     encode_float_table,
     parse_code,
+    parse_string_references,
+    encode_string_references,
 )
 
 
@@ -206,3 +208,31 @@ def test_parse_code():
 
     assert parse_code(stream) == ([b"\x01\x00\x00\x00", b"\x4a", b"\x01\x23\x45\x67", b"\x89\xab\xcd\xef"], 2)
     assert stream.read() == b"\xab\xcd"
+
+
+def test_parse_empty_string_references():
+    stream = io.BytesIO(eu32(0) + b"\xab\xcd")
+
+    assert parse_string_references(stream) == []
+    assert stream.read() == b"\xab\xcd"
+
+
+def test_parse_string_references():
+    stream = io.BytesIO(eu32(2) + eu32(0) + eu32(2) + eu32(4) + eu32(42) + eu32(32) + eu32(1) + eu32(7) + b"\xab\xcd")
+
+    assert parse_string_references(stream) == [
+        (0, [4, 42]),
+        (32, [7]),
+    ]
+    assert stream.read() == b"\xab\xcd"
+
+
+def test_encode_empty_string_references():
+    assert encode_string_references([]) == eu32(0)
+
+
+def test_encode_string_references():
+    string_references = [(0, [4, 42]), (32, [7])]
+    expected = eu32(2) + eu32(0) + eu32(2) + eu32(4) + eu32(42) + eu32(32) + eu32(1) + eu32(7)
+
+    assert encode_string_references(string_references) == expected
