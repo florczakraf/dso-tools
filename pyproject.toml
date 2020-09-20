@@ -1,0 +1,5 @@
+[build-system]
+requires = ['setuptools>=50.3.0', 'wheel>=0.35.1', 'setuptools_scm>=4.1.2']
+
+[tool.black]
+line-length = 120
