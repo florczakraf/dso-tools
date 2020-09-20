@@ -17,6 +17,7 @@ from dso_tools.dso import (
     get_raw_string_table,
     parse_float_table,
     encode_float_table,
+    parse_code,
 )
 
 
@@ -103,9 +104,20 @@ def test_is_opcode():
 
 
 def test_encode_code():
-    code = [b"\x00", b"\x00\x00\x00\x00", b"\x01", b"\x02", b"\x03", b"\x01\x02\x03\x04"]
+    code = [b"\x00", b"\x00\x00\x00\x00", b"\x01", b"\x02", b"\x03", b"\x01\x02\x03\x04", b"\x05\x06\x07\x08"]
+    line_break_count = 2
 
-    assert encode_code(code) == b"\x00\xff\x00\x00\x00\x00\x01\x02\x03\xff\x01\x02\x03\x04"
+    assert encode_code(code, line_break_count) == (
+        b"\x05\x00\x00\x00"
+        b"\x01\x00\x00\x00"
+        b"\x00"
+        b"\xff\x00\x00\x00\x00"
+        b"\x01"
+        b"\x02"
+        b"\x03"
+        b"\x01\x02\x03\x04"
+        b"\x05\x06\x07\x08"
+    )
 
 
 def test_offset_to_string():
@@ -172,3 +184,25 @@ def test_encode_float_table():
     assert encode_float_table([1.5, 42.1]) == (
         b"\x02\x00\x00\x00" b"\x00\x00\x00\x00\x00\x00\xf8\x3f" b"\xcd\xcc\xcc\xcc\xcc\x0c\x45\x40"
     )
+
+
+def test_parse_empty_code():
+    stream = io.BytesIO(b"\x00\x00\x00\x00" b"\x00\x00\x00\x00" b"\xab\xcd")
+
+    assert parse_code(stream) == ([], 0)
+    assert stream.read() == b"\xab\xcd"
+
+
+def test_parse_code():
+    stream = io.BytesIO(
+        b"\x02\x00\x00\x00"
+        b"\x01\x00\x00\x00"
+        b"\xff\x01\x00\x00\x00"
+        b"\x4a"
+        b"\x01\x23\x45\x67"
+        b"\x89\xab\xcd\xef"
+        b"\xab\xcd"
+    )
+
+    assert parse_code(stream) == ([b"\x01\x00\x00\x00", b"\x4a", b"\x01\x23\x45\x67", b"\x89\xab\xcd\xef"], 2)
+    assert stream.read() == b"\xab\xcd"

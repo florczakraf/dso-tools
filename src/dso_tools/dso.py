@@ -7,6 +7,25 @@ U32_BYTES = 4
 FLOAT_BYTES = 8
 
 
+def parse_code(stream):
+    instruction_count = u32(stream)
+    line_break_pair_count = u32(stream)
+    line_break_count = 2 * line_break_pair_count
+
+    code = []
+    for i in range(instruction_count):
+        peek = stream.read(1)
+        if peek == b"\xff":
+            code.append(stream.read(U32_BYTES))
+        else:
+            code.append(peek)
+
+    for i in range(line_break_count):
+        code.append(stream.read(U32_BYTES))
+
+    return code, line_break_count
+
+
 def parse_float_table(stream):
     floats_count = u32(stream)
     format_string = "<" + "d" * floats_count
@@ -38,15 +57,18 @@ def encode_string_table(string_table):
     return eu32(len(raw_strings)) + raw_strings
 
 
-def encode_code(code):
+def encode_code(code, line_break_count):
     buff = b""
-    for instruction in code:
+    for instruction in code[:-line_break_count]:
         if len(instruction) == 4:
             buff += b"\xff"
 
         buff += instruction
 
-    return buff
+    for instruction in code[-line_break_count:]:
+        buff += instruction
+
+    return eu32(len(code) - line_break_count) + eu32(line_break_count // 2) + buff
 
 
 def eu32(v):
