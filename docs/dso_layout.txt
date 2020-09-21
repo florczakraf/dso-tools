@@ -1,0 +1,39 @@
+Below notes are based on https://github.com/GarageGames/Torque3D/blob/7dbfe6994d2706157c1adba22fe02f26455d8687,
+the oldest version of Torque3d I found available online.
+
+The most interesting files are:
+ - Engine/source/console/codeBlock.cpp#L373
+ - Engine/source/console/consoleFunctions.cpp#L2032
+
+Torque's "float" is in fact a double (8 bytes). The only tricky part is the VM code section, described in detail below.
+
+DSO file layout is roughly:
+
+u32 version
+
+u32 global strings length (#bytes)
+u8[global strings length] global strings
+
+u32 function strings length (#bytes)
+u8[function strings length] function strings
+
+u32 global floats count (#floats == number of 8 byte chunks)
+f64[global floats count] global floats
+
+u32 function floats count (#floats)
+f64[function floats count] function floats
+
+u32 VM code instruction count (#instructions, details below)
+u32 line break pair count (#u32s / 2)
+VM code:
+    Read up to VM code instruction count instructions. The instruction can be either an u8 if the read byte is not
+    \xff or a \xff followed by an u32.
+u32[line break pair count * 2] ?? (it's appended to the VM code in the engine)
+
+u32 string references count
+Global string references:
+    Each reference consists of:
+        u32 offset (in bytes from the start of global strings)
+        u32 references count
+        u32[references count] VM code offsets (that are to be dynamically updated with the reference to this
+                              particular string)
