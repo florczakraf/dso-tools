@@ -20,8 +20,7 @@ from dso_tools.dso import (
     parse_code,
     parse_string_references,
     encode_string_references,
-    parse_dso,
-    encode_dso,
+    DSO,
 )
 
 
@@ -240,7 +239,7 @@ def test_encode_string_references():
     assert encode_string_references(string_references) == expected
 
 
-def test_parse_dso():
+def test_create_dso_from_stream():
     stream = io.BytesIO(
         b"\x2b\x00\x00\x00"  # protocol version
         b"\x0e\x00\x00\x00\x00second\x00third\x00"  # global string table
@@ -252,30 +251,31 @@ def test_parse_dso():
         b"\xab\xcd"
     )
 
-    assert parse_dso(stream) == (
-        43,
-        [b"", b"second", b"third", b""],
-        [b"", b"foo", b""],
-        [1.5],
-        [42.1],
-        [b"\x01\x00\x00\x00", b"\x4a", b"\x01\x23\x45\x67", b"\x89\xab\xcd\xef"],
-        2,
-        [(1, [3, 4])],
-    )
+    dso = DSO.from_stream(stream)
+
+    assert dso.version == 43
+    assert dso.global_strings == [b"", b"second", b"third", b""]
+    assert dso.function_strings == [b"", b"foo", b""]
+    assert dso.global_floats == [1.5]
+    assert dso.function_floats == [42.1]
+    assert dso.code == [b"\x01\x00\x00\x00", b"\x4a", b"\x01\x23\x45\x67", b"\x89\xab\xcd\xef"]
+    assert dso.line_break_count == 2
+    assert dso.string_references == [(1, [3, 4])]
     assert stream.read() == b"\xab\xcd"
 
 
 def test_encode_dso():
-    assert encode_dso(
-        43,
-        [b"", b"second", b"third", b""],
-        [b"", b"foo", b""],
-        [1.5],
-        [42.1],
-        [b"\x01\x00\x00\x00", b"\x4a", b"\x01\x23\x45\x67", b"\x89\xab\xcd\xef"],
-        2,
-        [(1, [3, 4])],
-    ) == (
+    dso = DSO()
+    dso.version = 43
+    dso.global_strings = [b"", b"second", b"third", b""]
+    dso.function_strings = [b"", b"foo", b""]
+    dso.global_floats = [1.5]
+    dso.function_floats = [42.1]
+    dso.code = [b"\x01\x00\x00\x00", b"\x4a", b"\x01\x23\x45\x67", b"\x89\xab\xcd\xef"]
+    dso.line_break_count = 2
+    dso.string_references = [(1, [3, 4])]
+
+    assert dso.encode() == (
         b"\x2b\x00\x00\x00"  # protocol version
         b"\x0e\x00\x00\x00\x00second\x00third\x00"  # global string table
         b"\x05\x00\x00\x00\x00foo\x00"  # function string table

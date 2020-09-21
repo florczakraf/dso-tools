@@ -7,50 +7,40 @@ U32_BYTES = 4
 FLOAT_BYTES = 8
 
 
-def encode_dso(
-    protocol_version,
-    global_strings,
-    function_strings,
-    global_floats,
-    function_floats,
-    code,
-    line_break_count,
-    string_references,
-):
-    buffer = eu32(protocol_version)
-    buffer += encode_string_table(global_strings)
-    buffer += encode_string_table(function_strings)
-    buffer += encode_float_table(global_floats)
-    buffer += encode_float_table(function_floats)
-    buffer += encode_code(code, line_break_count)
-    buffer += encode_string_references(string_references)
+class DSO:
+    version = SUPPORTED_DSO_VERSIONS[0]
+    global_strings = []
+    function_strings = []
+    global_floats = []
+    function_floats = []
+    code = []
+    line_break_count = 0
+    string_references = []
 
-    return buffer
+    @staticmethod
+    def from_stream(stream):
+        dso = DSO()
 
+        dso.protocol_version = parse_protocol_version(stream)
+        dso.global_strings = parse_string_table(stream)
+        dso.function_strings = parse_string_table(stream)
+        dso.global_floats = parse_float_table(stream)
+        dso.function_floats = parse_float_table(stream)
+        dso.code, dso.line_break_count = parse_code(stream)
+        dso.string_references = parse_string_references(stream)
 
-def parse_dso(stream):
-    protocol_version = parse_protocol_version(stream)
+        return dso
 
-    global_strings = parse_string_table(stream)
-    function_strings = parse_string_table(stream)
+    def encode(self):
+        buffer = eu32(self.version)
+        buffer += encode_string_table(self.global_strings)
+        buffer += encode_string_table(self.function_strings)
+        buffer += encode_float_table(self.global_floats)
+        buffer += encode_float_table(self.function_floats)
+        buffer += encode_code(self.code, self.line_break_count)
+        buffer += encode_string_references(self.string_references)
 
-    global_floats = parse_float_table(stream)
-    function_floats = parse_float_table(stream)
-
-    code, line_break_count = parse_code(stream)
-
-    string_references = parse_string_references(stream)
-
-    return (
-        protocol_version,
-        global_strings,
-        function_strings,
-        global_floats,
-        function_floats,
-        code,
-        line_break_count,
-        string_references,
-    )
+        return buffer
 
 
 def encode_string_references(string_references):
