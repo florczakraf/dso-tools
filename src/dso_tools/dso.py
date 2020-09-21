@@ -7,6 +7,52 @@ U32_BYTES = 4
 FLOAT_BYTES = 8
 
 
+def encode_dso(
+    protocol_version,
+    global_strings,
+    function_strings,
+    global_floats,
+    function_floats,
+    code,
+    line_break_count,
+    string_references,
+):
+    buffer = eu32(protocol_version)
+    buffer += encode_string_table(global_strings)
+    buffer += encode_string_table(function_strings)
+    buffer += encode_float_table(global_floats)
+    buffer += encode_float_table(function_floats)
+    buffer += encode_code(code, line_break_count)
+    buffer += encode_string_references(string_references)
+
+    return buffer
+
+
+def parse_dso(stream):
+    protocol_version = parse_protocol_version(stream)
+
+    global_strings = parse_string_table(stream)
+    function_strings = parse_string_table(stream)
+
+    global_floats = parse_float_table(stream)
+    function_floats = parse_float_table(stream)
+
+    code, line_break_count = parse_code(stream)
+
+    string_references = parse_string_references(stream)
+
+    return (
+        protocol_version,
+        global_strings,
+        function_strings,
+        global_floats,
+        function_floats,
+        code,
+        line_break_count,
+        string_references,
+    )
+
+
 def encode_string_references(string_references):
     buffer = eu32(len(string_references))
     for offset, occurrences in string_references:

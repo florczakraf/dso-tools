@@ -20,6 +20,8 @@ from dso_tools.dso import (
     parse_code,
     parse_string_references,
     encode_string_references,
+    parse_dso,
+    encode_dso,
 )
 
 
@@ -236,3 +238,49 @@ def test_encode_string_references():
     expected = eu32(2) + eu32(0) + eu32(2) + eu32(4) + eu32(42) + eu32(32) + eu32(1) + eu32(7)
 
     assert encode_string_references(string_references) == expected
+
+
+def test_parse_dso():
+    stream = io.BytesIO(
+        b"\x2b\x00\x00\x00"  # protocol version
+        b"\x0e\x00\x00\x00\x00second\x00third\x00"  # global string table
+        b"\x05\x00\x00\x00\x00foo\x00"  # function string table
+        b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf8\x3f"  # global float table
+        b"\x01\x00\x00\x00\xcd\xcc\xcc\xcc\xcc\x0c\x45\x40"  # string float table
+        b"\x02\x00\x00\x00\x01\x00\x00\x00\xff\x01\x00\x00\x00\x4a\x01\x23\x45\x67\x89\xab\xcd\xef"  # code
+        b"\x01\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\x00\x00\x00"  # string references
+        b"\xab\xcd"
+    )
+
+    assert parse_dso(stream) == (
+        43,
+        [b"", b"second", b"third", b""],
+        [b"", b"foo", b""],
+        [1.5],
+        [42.1],
+        [b"\x01\x00\x00\x00", b"\x4a", b"\x01\x23\x45\x67", b"\x89\xab\xcd\xef"],
+        2,
+        [(1, [3, 4])],
+    )
+    assert stream.read() == b"\xab\xcd"
+
+
+def test_encode_dso():
+    assert encode_dso(
+        43,
+        [b"", b"second", b"third", b""],
+        [b"", b"foo", b""],
+        [1.5],
+        [42.1],
+        [b"\x01\x00\x00\x00", b"\x4a", b"\x01\x23\x45\x67", b"\x89\xab\xcd\xef"],
+        2,
+        [(1, [3, 4])],
+    ) == (
+        b"\x2b\x00\x00\x00"  # protocol version
+        b"\x0e\x00\x00\x00\x00second\x00third\x00"  # global string table
+        b"\x05\x00\x00\x00\x00foo\x00"  # function string table
+        b"\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf8\x3f"  # global float table
+        b"\x01\x00\x00\x00\xcd\xcc\xcc\xcc\xcc\x0c\x45\x40"  # string float table
+        b"\x02\x00\x00\x00\x01\x00\x00\x00\xff\x01\x00\x00\x00\x4a\x01\x23\x45\x67\x89\xab\xcd\xef"  # code
+        b"\x01\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\x00\x00\x00"  # string references
+    )
