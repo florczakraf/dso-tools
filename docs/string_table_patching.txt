@@ -1,0 +1,13 @@
+When changing the contents of global string table you might find yourself in
+need for changing the related offsets in code and string references. Simple
+maintaining of the total length is not enough.
+
+VM opcodes that consume offsets are:
+ - OP_TAG_TO_STR (0x45)
+ - OP_LOADIMMED_STR (0x46)
+ - OP_DOCBLOCK_STR (0x47)
+ - OP_ASSERT (0x54)
+
+Where "consume" means that the following code instruction is an offset in bytes
+from the beginning of the string table in the raw form. Offsets in reference
+table work the same way.
