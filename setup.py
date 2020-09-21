@@ -12,4 +12,5 @@ setuptools.setup(
     extras_require={
         "dev": ["pytest", "black"],
     },
+    entry_points={"console_scripts": ["dso = dso_tools.main:main"]},
 )
