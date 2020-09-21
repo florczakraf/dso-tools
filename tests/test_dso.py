@@ -284,3 +284,63 @@ def test_encode_dso():
         b"\x02\x00\x00\x00\x01\x00\x00\x00\xff\x01\x00\x00\x00\x4a\x01\x23\x45\x67\x89\xab\xcd\xef"  # code
         b"\x01\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x04\x00\x00\x00"  # string references
     )
+
+
+def normalize_code(code):
+    r"""
+    Every single byte (\xXX) instruction in code can be also represented by the equivalent,
+    yet more verbose form of \xXX\x00\x00\x00, which is later represented by \xff\xXX\x00\x00\x00 in encoded form.
+    """
+    return [eu32(bytes_to_int(instruction)) for instruction in code]
+
+
+def test_patch_global_strings():
+    dso = DSO()
+    dso.version = 43
+    dso.global_strings = [b"", b"second", b"third", b"fourth", b""]
+    dso.code = [
+        b"\x01",  # some not interesting opcode
+        b"\x08",  # arbitrary value that's also an offset for "third"
+        b"\x45",  # OP_TAG_TO_STR
+        b"\x08",  # offset for "third"
+        b"\x46",  # OP_LOADIMMED_STR
+        b"\x08",  # offset for "third"
+        b"\x47",  # OP_DOCBLOCK_STR
+        b"\x08",  # offset for "third"
+        b"\x54",  # OP_ASSERT
+        b"\x08",  # offset for "third"
+        b"\x46",  # OP_LOADIMMED_STR
+        b"\x01",  # offset for "second"
+        b"\x46",  # OP_LOADIMMED_STR
+        b"\x0e",  # offset for "fourth"
+        b"\x02",  # another not interesting opcode
+        b"\x00",  # this will be patched using string_references
+        b"\x00",  # this will be patched using string_references
+    ]
+    dso.string_references = [(1, [13]), (8, [14])]
+
+    dso.patch_global_strings([(1, b"s e c o n d")])
+
+    assert dso.global_strings == [b"", b"s e c o n d", b"third", b"fourth", b""]
+    assert normalize_code(dso.code) == normalize_code(
+        [
+            b"\x01",  # some not interesting opcode
+            b"\x08",  # unchanged value
+            b"\x45",  # OP_TAG_TO_STR
+            b"\x0d",  # offset for "third"
+            b"\x46",  # OP_LOADIMMED_STR
+            b"\x0d",  # offset for "third"
+            b"\x47",  # OP_DOCBLOCK_STR
+            b"\x0d",  # offset for "third"
+            b"\x54",  # OP_ASSERT
+            b"\x0d",  # offset for "third"
+            b"\x46",  # OP_LOADIMMED_STR
+            b"\x01",  # offset for "s e c o n d"
+            b"\x46",  # OP_LOADIMMED_STR
+            b"\x13",  # offset for "fourth"
+            b"\x02",  # another not interesting opcode
+            b"\x00",  # this will be patched using string_references
+            b"\x00",  # this will be patched using string_references
+        ]
+    )
+    assert dso.string_references == [(1, [13]), (13, [14])]

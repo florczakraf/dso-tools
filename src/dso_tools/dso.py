@@ -42,6 +42,31 @@ class DSO:
 
         return buffer
 
+    def patch_global_strings(self, patches):
+        new_global_strings = self.global_strings.copy()
+        new_code = self.code.copy()
+        new_string_references = []
+
+        for i, new_value in patches:
+            new_global_strings[i] = new_value
+
+        for ip, instruction in enumerate(self.code):
+            if is_opcode(instruction):
+                op = OPCODES[u8(instruction)]
+                if op in ("OP_TAG_TO_STR", "OP_LOADIMMED_STR", "OP_DOCBLOCK_STR", "OP_ASSERT"):
+                    offset = bytes_to_int(new_code[ip + 1])
+                    new_offset = get_new_string_offset(offset, self.global_strings, new_global_strings)
+
+                    new_code[ip + 1] = eu32(new_offset)
+
+        for offset, occurrences in self.string_references:
+            new_offset = get_new_string_offset(offset, self.global_strings, new_global_strings)
+            new_string_references.append((new_offset, occurrences))
+
+        self.global_strings = new_global_strings
+        self.code = new_code
+        self.string_references = new_string_references
+
 
 def encode_string_references(string_references):
     buffer = eu32(len(string_references))
