@@ -124,6 +124,15 @@ def test_encode_code():
     )
 
 
+def test_encode_code_without_line_breaks():
+    code = [b"\x00", b"\x2a\x2a\x00\x00", b"\x01"]
+    line_break_count = 0
+
+    assert encode_code(code, line_break_count) == (
+        b"\x03\x00\x00\x00" b"\x00\x00\x00\x00" b"\x00" b"\xff\x2a\x2a\x00\x00" b"\x01"
+    )
+
+
 def test_offset_to_string():
     string_table = [b"", b"second", b"third", b""]
 

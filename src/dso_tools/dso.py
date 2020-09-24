@@ -145,13 +145,13 @@ def encode_string_table(string_table):
 
 def encode_code(code, line_break_count):
     buff = b""
-    for instruction in code[:-line_break_count]:
+    for instruction in code[0 : len(code) - line_break_count]:
         if len(instruction) == 4:
             buff += b"\xff"
 
         buff += instruction
 
-    for instruction in code[-line_break_count:]:
+    for instruction in code[len(code) - line_break_count :]:
         buff += instruction
 
     return eu32(len(code) - line_break_count) + eu32(line_break_count // 2) + buff
