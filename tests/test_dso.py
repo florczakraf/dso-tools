@@ -21,6 +21,7 @@ from dso_tools.dso import (
     parse_string_references,
     encode_string_references,
     DSO,
+    normalize_code,
 )
 
 
@@ -286,12 +287,11 @@ def test_encode_dso():
     )
 
 
-def normalize_code(code):
-    r"""
-    Every single byte (\xXX) instruction in code can be also represented by the equivalent,
-    yet more verbose form of \xXX\x00\x00\x00, which is later represented by \xff\xXX\x00\x00\x00 in encoded form.
-    """
-    return [eu32(bytes_to_int(instruction)) for instruction in code]
+def test_normalize_code():
+    assert normalize_code([]) == []
+    assert normalize_code([b"\x2a"]) == [b"\x2a\x00\x00\x00"]
+    assert normalize_code([b"\x2a\x00\x00\x00"]) == [b"\x2a\x00\x00\x00"]
+    assert normalize_code([b"\x2a\x00\x00\x00", b"\x01"]) == [b"\x2a\x00\x00\x00", b"\x01\x00\x00\x00"]
 
 
 def test_patch_global_strings():

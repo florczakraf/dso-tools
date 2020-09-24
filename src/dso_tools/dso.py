@@ -223,3 +223,11 @@ def parse_string_table(stream):
     string_table = stream.read(strings_length).split(b"\x00")
 
     return string_table
+
+
+def normalize_code(code):
+    r"""
+    Every single byte (\xXX) instruction in code can be also represented by the equivalent,
+    yet more verbose form of \xXX\x00\x00\x00, which is later represented by \xff\xXX\x00\x00\x00 in encoded form.
+    """
+    return [eu32(bytes_to_int(instruction)) for instruction in code]
