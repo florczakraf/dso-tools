@@ -1,17 +1,21 @@
+import subprocess
+
 import pytest
+
 from dso_tools.dso import DSO
-from dso_tools.main import dump_string_table, parse_args
+from dso_tools.main import parse_args
 
 
-def test_dump_string_table(capsys):
+def test_dump_string_table(capsys, tmp_path):
     dso = DSO()
     dso.global_strings = [b"", b"second", b"third", b""]
+    dso_file = tmp_path / "dso_file"
+    dso_file.write_bytes(dso.encode())
 
-    dump_string_table(dso)
+    result = subprocess.check_output(["dso", "--dump-string-table", dso_file.as_posix()], text=True)
 
-    captured = capsys.readouterr().out
     assert (
-        captured
+        result
         == """\
 {
     "0": "",
