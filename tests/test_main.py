@@ -6,7 +6,7 @@ from dso_tools.dso import DSO
 from dso_tools.main import parse_args
 
 
-def test_dump_string_table(capsys, tmp_path):
+def test_dump_string_table(tmp_path):
     dso = DSO()
     dso.global_strings = [b"", b"second", b"third", b""]
     dso_file = tmp_path / "dso_file"
