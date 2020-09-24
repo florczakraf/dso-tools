@@ -48,7 +48,7 @@ class DSO:
         new_string_references = []
 
         for i, new_value in patches.items():
-            new_global_strings[i] = new_value.encode()
+            new_global_strings[int(i)] = new_value.encode()
 
         for ip, instruction in enumerate(self.code):
             if is_opcode(instruction):

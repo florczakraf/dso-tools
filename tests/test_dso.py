@@ -319,7 +319,7 @@ def test_patch_global_strings():
     ]
     dso.string_references = [(1, [13]), (8, [14])]
 
-    dso.patch_global_strings({1: "s e c o n d"})
+    dso.patch_global_strings({1: "s e c o n d", "2": "third"})
 
     assert dso.global_strings == [b"", b"s e c o n d", b"third", b"fourth", b""]
     assert normalize_code(dso.code) == normalize_code(
